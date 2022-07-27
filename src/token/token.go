@@ -3,6 +3,7 @@ package token
 type TokenType string
 
 const (
+	// Special tokens
 	ILLEGAL = "ILLEGAL"
 	EOF     = "EOF"
 

@@ -1,10 +1,15 @@
-package lexer
+package lexer_test
 
 import (
+	"interpreter/monkey/src/lexer"
+	"interpreter/monkey/src/token"
 	"testing"
-
-	"monkey/token"
 )
+
+type TestCase struct {
+	expectedType    token.TokenType
+	expectedLiteral string
+}
 
 func TestNextToken(t *testing.T) {
 	input := `let five = 5;
@@ -28,10 +33,7 @@ if (5 < 10) {
 10 != 9;
 `
 
-	tests := []struct {
-		expectedType    token.TokenType
-		expectedLiteral string
-	}{
+	tests := []TestCase{
 		{token.LET, "let"},
 		{token.IDENT, "five"},
 		{token.ASSIGN, "="},
@@ -108,7 +110,7 @@ if (5 < 10) {
 		{token.EOF, ""},
 	}
 
-	l := New(input)
+	l := lexer.New(input)
 
 	for i, tt := range tests {
 		tok := l.NextToken()
