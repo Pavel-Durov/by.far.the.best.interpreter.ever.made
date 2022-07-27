@@ -112,17 +112,15 @@ if (5 < 10) {
 
 	l := lexer.New(input)
 
-	for i, tt := range tests {
+	for i, tcase := range tests {
 		tok := l.NextToken()
 
-		if tok.Type != tt.expectedType {
-			t.Fatalf("tests[%d] - tokentype wrong. expected=%q, got=%q",
-				i, tt.expectedType, tok.Type)
+		if tok.Type != tcase.expectedType {
+			t.Fatalf("tests[%d] - tokentype wrong. expected=%q, got=%q", i, tcase.expectedType, tok.Type)
 		}
 
-		if tok.Literal != tt.expectedLiteral {
-			t.Fatalf("tests[%d] - literal wrong. expected=%q, got=%q",
-				i, tt.expectedLiteral, tok.Literal)
+		if tok.Literal != tcase.expectedLiteral {
+			t.Fatalf("tests[%d] - literal wrong. expected=%q, got=%q", i, tcase.expectedLiteral, tok.Literal)
 		}
 	}
 }

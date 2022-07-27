@@ -2,11 +2,15 @@ package lexer
 
 import "interpreter/monkey/src/token"
 
+const (
+	NUL = 0
+)
+
 type Lexer struct {
-	input        string
-	position     int  // current position in input (points to current char)
-	readPosition int  // current reading position in input (after current char)
-	ch           byte // current char under examination
+	input            string
+	currentPosition  int
+	nextPositionRead int
+	ch               byte
 }
 
 func New(input string) *Lexer {
@@ -15,11 +19,8 @@ func New(input string) *Lexer {
 	return l
 }
 
-func (l *Lexer) NextToken() token.Token {
-	var tok token.Token
-
+func (l *Lexer) NextToken() (tok token.Token) {
 	l.skipWhitespace()
-
 	switch l.ch {
 	case '=':
 		if l.peekChar() == '=' {
@@ -67,11 +68,11 @@ func (l *Lexer) NextToken() token.Token {
 		tok.Literal = ""
 		tok.Type = token.EOF
 	default:
-		if isLetter(l.ch) {
+		if l.isCurrentCharLetter() {
 			tok.Literal = l.readIdentifier()
 			tok.Type = token.LookupIdent(tok.Literal)
 			return tok
-		} else if isDigit(l.ch) {
+		} else if l.isCurrentCharDigit() {
 			tok.Type = token.INT
 			tok.Literal = l.readNumber()
 			return tok
@@ -90,46 +91,50 @@ func (l *Lexer) skipWhitespace() {
 	}
 }
 
+func (l *Lexer) isEnd() bool {
+	return l.nextPositionRead >= len(l.input)
+}
+
 func (l *Lexer) readChar() {
-	if l.readPosition >= len(l.input) {
-		l.ch = 0
+	if l.isEnd() {
+		l.ch = NUL
 	} else {
-		l.ch = l.input[l.readPosition]
+		l.ch = l.input[l.nextPositionRead]
 	}
-	l.position = l.readPosition
-	l.readPosition += 1
+	l.currentPosition = l.nextPositionRead
+	l.nextPositionRead += 1
 }
 
 func (l *Lexer) peekChar() byte {
-	if l.readPosition >= len(l.input) {
+	if l.nextPositionRead >= len(l.input) {
 		return 0
 	} else {
-		return l.input[l.readPosition]
+		return l.input[l.nextPositionRead]
 	}
 }
 
 func (l *Lexer) readIdentifier() string {
-	position := l.position
-	for isLetter(l.ch) {
+	position := l.currentPosition
+	for l.isCurrentCharLetter() {
 		l.readChar()
 	}
-	return l.input[position:l.position]
+	return l.input[position:l.currentPosition]
 }
 
 func (l *Lexer) readNumber() string {
-	position := l.position
-	for isDigit(l.ch) {
+	position := l.currentPosition
+	for l.isCurrentCharDigit() {
 		l.readChar()
 	}
-	return l.input[position:l.position]
+	return l.input[position:l.currentPosition]
 }
 
-func isLetter(ch byte) bool {
-	return 'a' <= ch && ch <= 'z' || 'A' <= ch && ch <= 'Z' || ch == '_'
+func (l *Lexer) isCurrentCharLetter() bool {
+	return 'a' <= l.ch && l.ch <= 'z' || 'A' <= l.ch && l.ch <= 'Z' || l.ch == '_'
 }
 
-func isDigit(ch byte) bool {
-	return '0' <= ch && ch <= '9'
+func (l *Lexer) isCurrentCharDigit() bool {
+	return '0' <= l.ch && l.ch <= '9'
 }
 
 func newToken(tokenType token.TokenType, ch byte) token.Token {
