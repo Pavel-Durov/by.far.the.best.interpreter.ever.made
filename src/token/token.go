@@ -7,7 +7,7 @@ const (
 	ILLEGAL = "ILLEGAL"
 	EOF     = "EOF"
 
-	// Identifiers + literals
+	// Identifiers + literals. Token type for all user-defined identifiers
 	IDENT = "IDENT" // add, foobar, x, y, ...
 	INT   = "INT"   // 1343456
 
@@ -60,8 +60,8 @@ var keywords = map[string]TokenType{
 }
 
 func LookupIdent(ident string) TokenType {
-	if tok, ok := keywords[ident]; ok {
-		return tok
+	if token, exists := keywords[ident]; exists {
+		return token
 	}
 	return IDENT
 }
