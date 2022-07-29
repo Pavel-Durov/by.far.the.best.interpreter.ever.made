@@ -1,6 +1,6 @@
-# best interpreter ever made
+# by far the best interpreter ever made
 
-WARNING! You about to witness the be the best interpreter ever made.
+WARNING! You about to witness by far the best interpreter ever made
 
 
 ## Running Tests
