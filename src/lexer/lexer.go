@@ -1,6 +1,6 @@
 package lexer
 
-import "interpreter/monkey/src/token"
+import "by.far.the.best.interpreter.ever.made.io/src/token"
 
 const (
 	NUL = 0
@@ -17,6 +17,13 @@ func New(input string) *Lexer {
 	l := &Lexer{input: input}
 	l.readChar()
 	return l
+}
+
+func (l *Lexer) getNotEqToken() token.Token {
+	ch := l.ch
+	l.readChar()
+	literal := string(ch) + string(l.ch)
+	return token.Token{Type: token.NOT_EQ, Literal: literal}
 }
 
 func (l *Lexer) NextToken() (tok token.Token) {
@@ -37,10 +44,7 @@ func (l *Lexer) NextToken() (tok token.Token) {
 		tok = newToken(token.MINUS, l.ch)
 	case '!':
 		if l.peekChar() == '=' {
-			ch := l.ch
-			l.readChar()
-			literal := string(ch) + string(l.ch)
-			tok = token.Token{Type: token.NOT_EQ, Literal: literal}
+			tok = l.getNotEqToken()
 		} else {
 			tok = newToken(token.BANG, l.ch)
 		}
@@ -68,21 +72,28 @@ func (l *Lexer) NextToken() (tok token.Token) {
 		tok.Literal = ""
 		tok.Type = token.EOF
 	default:
-		if l.isCurrentCharLetter() {
-			tok.Literal = l.readIdentifier()
-			tok.Type = token.LookupIdent(tok.Literal)
-			return tok
-		} else if l.isCurrentCharDigit() {
-			tok.Type = token.INT
-			tok.Literal = l.readNumber()
-			return tok
-		} else {
-			tok = newToken(token.ILLEGAL, l.ch)
+		unident := l.readUnidentifiedChar()
+		if unident != nil {
+			return *unident
 		}
+		tok = newToken(token.ILLEGAL, l.ch)
 	}
-
 	l.readChar()
 	return tok
+}
+
+func (l *Lexer) readUnidentifiedChar() *token.Token {
+	tok := &token.Token{}
+	if l.isCurrentCharLetter() {
+		tok.Literal = l.readIdentifier()
+		tok.Type = token.LookupIdent(tok.Literal)
+		return tok
+	} else if l.isCurrentCharDigit() {
+		tok.Type = token.INT
+		tok.Literal = l.readNumber()
+		return tok
+	}
+	return nil
 }
 
 func (l *Lexer) skipWhitespace() {
@@ -107,7 +118,7 @@ func (l *Lexer) readChar() {
 
 func (l *Lexer) peekChar() byte {
 	if l.nextPositionRead >= len(l.input) {
-		return 0
+		return NUL
 	} else {
 		return l.input[l.nextPositionRead]
 	}

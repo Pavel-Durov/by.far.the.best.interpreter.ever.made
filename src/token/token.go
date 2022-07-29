@@ -49,6 +49,10 @@ type Token struct {
 	Literal string
 }
 
+func (t *Token) IsEOF() bool {
+	return t.Type == EOF
+}
+
 var keywords = map[string]TokenType{
 	"fn":     FUNCTION,
 	"let":    LET,
