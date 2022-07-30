@@ -1,6 +1,8 @@
 package ast
 
-import "by.far.the.best.interpreter.ever.made.io/src/token"
+import (
+	"by.far.the.best.interpreter.ever.made.io/src/token"
+)
 
 // Every node in AST has to implement this interface
 type Node interface {
@@ -20,6 +22,12 @@ type Expression interface {
 
 type Program struct {
 	Statements []Statement
+}
+
+func NewProgram() *Program {
+	return &Program{
+		Statements: []Statement{},
+	}
 }
 
 func (p *Program) TokenLiteral() string {
