@@ -17,4 +17,8 @@
 .direnv
 .vscode
 snippets/
+# build artefacts
 bin
+# guide book sampler
+waiig 
+waiig.zip

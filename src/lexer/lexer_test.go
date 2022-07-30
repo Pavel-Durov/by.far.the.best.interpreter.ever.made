@@ -111,7 +111,7 @@ func TestNextToken(t *testing.T) {
 		{token.EOF, ""},
 	}
 
-	l := lexer.New(input)
+	l := lexer.NewLexer(input)
 
 	for i, tcase := range tests {
 		tok := l.NextToken()

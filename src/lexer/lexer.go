@@ -13,10 +13,10 @@ type Lexer struct {
 	ch               byte
 }
 
-func New(input string) *Lexer {
-	l := &Lexer{input: input}
-	l.readChar()
-	return l
+func NewLexer(input string) *Lexer {
+	lex := &Lexer{input: input}
+	lex.readChar()
+	return lex
 }
 
 func (l *Lexer) getNotEqToken() token.Token {
