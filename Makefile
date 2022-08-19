@@ -7,7 +7,7 @@ repl:
 	go run src/main.go 
 
 test:
-	go test ./src/...
+	go test ./src/... --race
 
 .PHONY:
 build: build-amd64 build-arm64
