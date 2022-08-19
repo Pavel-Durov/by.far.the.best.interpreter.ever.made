@@ -1,6 +1,7 @@
 CWD := $(shell cd -P -- '$(shell dirname -- "$0")' && pwd -P)
+CGO_ENABLED=0
+
 SHELL := /bin/bash
-export GO111MODULE := on
 export GOBIN := $(CWD)/.bin
 
 repl:
@@ -13,7 +14,7 @@ test:
 build: build-amd64 build-arm64
 
 build-%:
-	GOARCH=$* go build -o ./bin/$*/ByBarTheBestInterpreterEverMade ./src
+	GOARCH=$* go build -trimpath -o ./bin/$*/ByBarTheBestInterpreterEverMade ./src 
 
 clean:
 	test -f ./waiig.zip && rm ./waiig.zip
