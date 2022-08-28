@@ -10,6 +10,9 @@ repl:
 test:
 	go test ./src/... --race
 
+test-trace:
+	TRACE=true go test -v ./src... 
+
 .PHONY:
 build: build-amd64 build-arm64
 

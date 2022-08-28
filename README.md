@@ -7,7 +7,8 @@ WARNING! You about to witness by far the best interpreter ever made
 
 ## Running Tests
 ```shell
-$ make test
+$ make test # run tests
+$ make test-trace # run tests with trace
 ```
 
 ## Running REPL
