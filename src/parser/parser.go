@@ -1,6 +1,8 @@
 package parser
 
 import (
+	"fmt"
+
 	"by.far.the.best.interpreter.ever.made.io/src/ast"
 	"by.far.the.best.interpreter.ever.made.io/src/lexer"
 	"by.far.the.best.interpreter.ever.made.io/src/token"
@@ -10,6 +12,7 @@ type Parser struct {
 	lexer        *lexer.Lexer
 	currentToken token.Token
 	peekToken    token.Token
+	errors       []string
 }
 
 func (p *Parser) parseStatement() ast.Statement {
@@ -24,11 +27,18 @@ func (p *Parser) isEOF() bool {
 	return p.currentToken.Type == token.EOF
 }
 func NewParser(lexer *lexer.Lexer) *Parser {
-	p := &Parser{lexer: lexer}
+	p := &Parser{lexer: lexer, errors: []string{}}
 	p.nextToken()
 	p.nextToken()
 
 	return p
+}
+func (p *Parser) Errors() []string {
+	return p.errors
+}
+func (p *Parser) peekError(t token.TokenType) {
+	msg := fmt.Sprintf("expected next token to be %s, got %s instead", t, p.peekToken.Type)
+	p.errors = append(p.errors, msg)
 }
 
 func (p *Parser) nextToken() *ast.Program {
@@ -54,8 +64,10 @@ func (p *Parser) expectPeek(t token.TokenType) bool {
 	if p.peekTokenIs(t) {
 		p.nextToken()
 		return true
+	} else {
+		p.peekError(t)
+		return false
 	}
-	return false
 }
 
 func (p *Parser) currentTokenIs(t token.TokenType) bool {

@@ -6,6 +6,7 @@ import (
 	"by.far.the.best.interpreter.ever.made.io/src/ast"
 	"by.far.the.best.interpreter.ever.made.io/src/lexer"
 	"by.far.the.best.interpreter.ever.made.io/src/parser"
+	"github.com/stretchr/testify/assert"
 )
 
 type TestCase struct {
@@ -18,16 +19,18 @@ func TestLetStatements(t *testing.T) {
 	input := `
 		let x = 5;
 		let y = 10;
-		let kimchi = 1985;
+		let kimchi = 198;
 	`
 	lex := lexer.NewLexer(input)
 	p := parser.NewParser(lex)
 	prog := p.ParseProgram()
+
+	checkParserErrors(t, p)
 	if prog == nil {
 		t.Fatalf("Program is nil")
 	}
 	if (len(prog.Statements)) != 3 {
-		t.Fatalf("Program statements do nor contain 3 statements")
+		t.Fatalf("Program statements do not contain 3 statements")
 	}
 	test := []struct {
 		identifier string
@@ -41,6 +44,31 @@ func TestLetStatements(t *testing.T) {
 			return
 		}
 	}
+}
+
+func TestLetStatementsErrors(t *testing.T) {
+	input := `
+		let = 198;
+	`
+	lex := lexer.NewLexer(input)
+	p := parser.NewParser(lex)
+	p.ParseProgram()
+
+	err := p.Errors()
+	assert.Equal(t, 1, len(p.Errors()))
+	assert.Equal(t, "expected next token to be IDENT, got = instead", err[0])
+}
+
+func checkParserErrors(t *testing.T, p *parser.Parser) {
+	errors := p.Errors()
+	if len(errors) == 0 {
+		return
+	}
+	t.Errorf("parser has %d errors", len(errors))
+	for _, msg := range errors {
+		t.Errorf("parser error: %q", msg)
+	}
+	t.FailNow()
 }
 
 func testLetStatement(t *testing.T, stmt ast.Statement, identifier string) bool {
