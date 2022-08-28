@@ -4,6 +4,7 @@ package ast
 type Node interface {
 	// returns associated token literal value (used only for debugging and testing)
 	TokenLiteral() string
+	String() string
 }
 
 type Statement interface {
