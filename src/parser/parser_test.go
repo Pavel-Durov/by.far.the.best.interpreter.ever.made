@@ -15,34 +15,43 @@ type TestCase struct {
 	expectedValue      interface{}
 }
 
+func ParseInput(in string) (*lexer.Lexer, *parser.Parser, *ast.Program) {
+	l := lexer.NewLexer(in)
+	p := parser.NewParser(l)
+	program := p.ParseProgram()
+	return l, p, program
+}
+
 func TestLetStatements(t *testing.T) {
-	input := `
-		let x = 5;
-		let y = 10;
-		let kimchi = 198;
-	`
-	lex := lexer.NewLexer(input)
-	p := parser.NewParser(lex)
-	prog := p.ParseProgram()
-
-	checkParserErrors(t, p)
-	if prog == nil {
-		t.Fatalf("Program is nil")
-	}
-	if (len(prog.Statements)) != 3 {
-		t.Fatalf("Program statements do not contain 3 statements")
-	}
-	test := []struct {
-		identifier string
+	tests := []struct {
+		input              string
+		expectedIdentifier string
+		expectedValue      interface{}
 	}{
-		{"x"}, {"y"}, {"kimchi"},
+		{"let x = 5;", "x", 5},
+		{"let y = true;", "y", true},
+		{"let foobar = y;", "foobar", "y"},
 	}
 
-	for i, testCase := range test {
-		stmt := prog.Statements[i]
-		if !testLetStatement(t, stmt, testCase.identifier) {
+	for _, tt := range tests {
+		_, p, program := ParseInput(tt.input)
+		checkParserErrors(t, p)
+
+		if len(program.Statements) != 1 {
+			t.Fatalf("program.Statements does not contain 1 statements. got=%d",
+				len(program.Statements))
+		}
+
+		stmt := program.Statements[0]
+		if !testLetStatement(t, stmt, tt.expectedIdentifier) {
 			return
 		}
+
+		// TODO: set LetStatement value
+		// val := stmt.(*ast.LetStatement).Value
+		// if !testLiteralExpression(t, val, tt.expectedValue) {
+		// 	return
+		// }
 	}
 }
 
@@ -52,9 +61,7 @@ func TestReturnStatements(t *testing.T) {
    return 10;
    return 993322;
    `
-	l := lexer.NewLexer(input)
-	p := parser.NewParser(l)
-	program := p.ParseProgram()
+	_, p, program := ParseInput(input)
 	checkParserErrors(t, p)
 	if len(program.Statements) != 3 {
 		t.Fatalf("program.Statements does not contain 3 statements. got=%d",
@@ -73,24 +80,9 @@ func TestReturnStatements(t *testing.T) {
 	}
 }
 
-// func TestLetStatementsErrors(t *testing.T) {
-// 	input := `
-// 		let = 198;
-// 	`
-// 	lex := lexer.NewLexer(input)
-// 	p := parser.NewParser(lex)
-// 	p.ParseProgram()
-
-// 	err := p.Errors()
-// 	assert.Equal(t, 1, len(p.Errors()))
-// 	assert.Equal(t, "expected next token to be IDENT, got = instead", err[0])
-// }
-
 func TestIdentifierExpression(t *testing.T) {
 	input := "foobar;"
-	l := lexer.NewLexer(input)
-	p := parser.NewParser(l)
-	program := p.ParseProgram()
+	_, p, program := ParseInput(input)
 	checkParserErrors(t, p)
 	if len(program.Statements) != 1 {
 		t.Fatalf("program has not enough statements. got=%d", len(program.Statements))
@@ -115,9 +107,7 @@ func TestIdentifierExpression(t *testing.T) {
 
 func TestIntegerLiteralExpression(t *testing.T) {
 	input := "5;"
-	l := lexer.NewLexer(input)
-	p := parser.NewParser(l)
-	program := p.ParseProgram()
+	_, p, program := ParseInput(input)
 	checkParserErrors(t, p)
 	if len(program.Statements) != 1 {
 		t.Fatalf("program has not enough statements. got=%d",
@@ -151,9 +141,7 @@ func TestParsingPrefixExpressions(t *testing.T) {
 		{"-15;", "-", 15},
 	}
 	for _, tt := range prefixTests {
-		l := lexer.NewLexer(tt.input)
-		p := parser.NewParser(l)
-		program := p.ParseProgram()
+		_, p, program := ParseInput(tt.input)
 		checkParserErrors(t, p)
 		if len(program.Statements) != 1 {
 			t.Fatalf("program.Statements does not contain %d statements. got=%d\n", 1, len(program.Statements))
@@ -193,9 +181,7 @@ func TestParsingInfixExpressions(t *testing.T) {
 		{"5 != 5;", 5, "!=", 5},
 	}
 	for _, tt := range infixTests {
-		l := lexer.NewLexer(tt.input)
-		p := parser.NewParser(l)
-		program := p.ParseProgram()
+		_, p, program := ParseInput(tt.input)
 		checkParserErrors(t, p)
 		if len(program.Statements) != 1 {
 			t.Fatalf("program.Statements does not contain %d statements. got=%d\n",
@@ -278,9 +264,7 @@ func TestOperatorPrecedenceParsing(t *testing.T) {
 		},
 	}
 	for _, tt := range tests {
-		l := lexer.NewLexer(tt.input)
-		p := parser.NewParser(l)
-		program := p.ParseProgram()
+		_, p, program := ParseInput(tt.input)
 		checkParserErrors(t, p)
 
 		actual := program.String()
@@ -319,6 +303,40 @@ func checkParserErrors(t *testing.T, p *parser.Parser) {
 	t.FailNow()
 }
 
+func testLiteralExpression(t *testing.T,
+	exp ast.Expression,
+	expected interface{}) bool {
+	switch v := expected.(type) {
+	case int:
+		return testIntegerLiteral(t, exp, int64(v))
+	case int64:
+		return testIntegerLiteral(t, exp, v)
+	case string:
+		return testIdentifier(t, exp, v)
+	}
+	t.Errorf("type of exp not handled. got=%T", exp)
+	return false
+}
+
+func testInfixExpression(t *testing.T, exp ast.Expression, left interface{}, operator string, right interface{}) bool {
+	opExp, ok := exp.(*ast.InfixExpression)
+	if !ok {
+		t.Errorf("exp is not ast.OperatorExpression. got=%T(%s)", exp, exp)
+		return false
+	}
+	if !testLiteralExpression(t, opExp.Left, left) {
+		return false
+	}
+	if opExp.Operator != operator {
+		t.Errorf("exp.Operator is not '%s'. got=%q", operator, opExp.Operator)
+		return false
+	}
+	if !testLiteralExpression(t, opExp.Right, right) {
+		return false
+	}
+	return true
+}
+
 func testLetStatement(t *testing.T, stmt ast.Statement, identifier string) bool {
 	if stmt.TokenLiteral() != "let" {
 		t.Errorf("token literal is not let 'let'. got=%q", stmt.TokenLiteral())
@@ -335,6 +353,23 @@ func testLetStatement(t *testing.T, stmt ast.Statement, identifier string) bool 
 	}
 	if letStmt.Name.TokenLiteral() != identifier {
 		t.Errorf("unexpected let statement token literal not '%s'. got=%s", identifier, letStmt.Name)
+		return false
+	}
+	return true
+}
+
+func testIdentifier(t *testing.T, exp ast.Expression, value string) bool {
+	ident, ok := exp.(*ast.Identifier)
+	if !ok {
+		t.Errorf("exp not *ast.Identifier. got=%T", exp)
+		return false
+	}
+	if ident.Value != value {
+		t.Errorf("ident.Value not %s. got=%s", value, ident.Value)
+		return false
+	}
+	if ident.TokenLiteral() != value {
+		t.Errorf("ident.TokenLiteral not %s. got=%s", value, ident.TokenLiteral())
 		return false
 	}
 	return true
